@@ -30,7 +30,7 @@ publish/
 out/
 
 ## Migrations geradas localmente (opcional, pode remover se quiser versionar)
-Migrations/
+##Migrations/
 
 ## Secretos ou sensíveis
 secrets.json
