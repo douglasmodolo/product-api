@@ -1,0 +1,50 @@
+# Conteúdo padrão para .gitignore em projetos ASP.NET Core com Visual Studio e MySQL
+gitignore_content = """
+## Ignore arquivos do Visual Studio
+.vs/
+*.user
+*.suo
+
+## Build results
+bin/
+obj/
+
+## Arquivos de log
+*.log
+
+## Configurações locais
+appsettings.Development.json
+appsettings.Local.json
+
+## Arquivos do sistema
+*.DS_Store
+Thumbs.db
+
+## Pacotes NuGet
+*.nupkg
+packages/
+project.lock.json
+
+## Diretórios de publicação
+publish/
+out/
+
+## Migrations geradas localmente (opcional, pode remover se quiser versionar)
+Migrations/
+
+## Secretos ou sensíveis
+secrets.json
+
+## MySQL (dump ou configs locais)
+*.sql
+*.dump.sql
+"""
+
+# Caminho para salvar o arquivo .gitignore
+gitignore_path = Path("/mnt/data/.gitignore")
+
+# Salvar o conteúdo no arquivo
+gitignore_path.write_text(gitignore_content, encoding="utf-8")
+
+# Retornar o nome do arquivo
+gitignore_path.name
