@@ -65,8 +65,8 @@ namespace WebAPI.Controllers
                 return NotFound();
             }
 
-            product.UpdatedAt = DateTime.UtcNow;
-            _context.Entry(product).State = EntityState.Modified;
+            existingProduct.UpdatedAt = DateTime.UtcNow;
+            _context.Entry(existingProduct).State = EntityState.Modified;
             _context.SaveChanges();
             return Ok(existingProduct);
         }
