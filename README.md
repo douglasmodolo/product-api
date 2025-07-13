@@ -30,7 +30,7 @@ ProductApi/
 ├── Models/
 │   ├── Product.cs
 │   └── Category.cs
-├── Data/
+├── Context/
 │   └── AppDbContext.cs
 ├── Program.cs
 └── ...
