@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace WebAPI.Models
 {
@@ -24,7 +25,9 @@ namespace WebAPI.Models
         public float Stock { get; set; }        
         public DateTime CreatedAt { get; set; }        
         public DateTime UpdatedAt { get; set; }        
-        public int CategoryId { get; set; }        
+        public int CategoryId { get; set; }
+        
+        [JsonIgnore]
         public Category? Category { get; set; } // Navigation property to Category
     }
 }
