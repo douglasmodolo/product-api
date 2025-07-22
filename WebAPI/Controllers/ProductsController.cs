@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebAPI.Context;
 using WebAPI.Models;
+using WebAPI.Repositories;
 
 namespace WebAPI.Controllers
 {
@@ -9,32 +11,32 @@ namespace WebAPI.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IProductRepository _repository;
 
-        public ProductsController(AppDbContext context)
+        public ProductsController(IProductRepository repository)
         {
-            _context = context;
+            _repository = repository;
         }
 
         [HttpGet]
         public ActionResult<IEnumerable<Product>> GetAll()
         {
-            var products = _context.Products?.ToList();
+            var products = _repository.GetAll()?.ToList();
+
             if (products == null)
-            {
                 return NotFound("Produtos não encontrados.");
-            }
+            
             return Ok(products);
         }
 
         [HttpGet("{id:int}")]
         public ActionResult<Product> GetById(int id)
         {
-            var product = _context.Products?.Find(id);
+            var product = _repository.GetById(id);
+
             if (product == null)
-            {
                 return NotFound("Produto não encontrado.");
-            }
+            
             return Ok(product);
         }
 
@@ -42,45 +44,33 @@ namespace WebAPI.Controllers
         public ActionResult<Product> Create(Product product)
         {
             if (product == null)
-            {
                 return BadRequest();
-            }
-            product.CreatedAt = DateTime.UtcNow;
-            product.UpdatedAt = DateTime.UtcNow;
-            _context.Products?.Add(product);
-            _context.SaveChanges();
-            return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
+                        
+            var createdProduct = _repository.Create(product);
+            
+            if (createdProduct == null)
+                return BadRequest("Erro ao criar o produto.");
+
+            return CreatedAtAction(nameof(GetById), new { id = createdProduct.Id }, createdProduct);
         }
 
         [HttpPut("{id:int}")]
-        public ActionResult<Product> Update(int id, Product product)
+        public ActionResult Update(int id, Product product)
         {
-            if (id != product.Id)
-            {
-                return BadRequest("Produto não encontrado.");
-            }
-            var existingProduct = _context.Products?.Find(id);
-            if (existingProduct == null)
-            {
-                return NotFound();
-            }
+            if (product == null || id != product.Id)
+                return BadRequest("Produto inválido ou ID não corresponde.");
 
-            existingProduct.UpdatedAt = DateTime.UtcNow;
-            _context.Entry(existingProduct).State = EntityState.Modified;
-            _context.SaveChanges();
-            return Ok(existingProduct);
+            if (!_repository.Update(id, product))
+                return NotFound($"Produto com ID {id} não encontrado.");
+
+            return Ok();
         }
 
         [HttpDelete("{id:int}")]
         public ActionResult Delete(int id)
         {
-            var product = _context.Products?.Find(id);
-            if (product == null)
-            {
-                return NotFound("Produto não encontrado.");
-            }
-            _context.Products?.Remove(product);
-            _context.SaveChanges();
+            _repository.Delete(id);
+
             return NoContent();
         }
     }
