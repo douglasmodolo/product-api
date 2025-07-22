@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using WebAPI.Context;
 using WebAPI.Filters;
 using WebAPI.Models;
+using WebAPI.Repositories;
 
 namespace WebAPI.Controllers
 {
@@ -10,44 +10,44 @@ namespace WebAPI.Controllers
     [ApiController]
     public class CategoriesController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly ICategoryRepository _repository;
 
-        public CategoriesController(AppDbContext context)
+        public CategoriesController(ICategoryRepository repository)
         {
-            _context = context;
+            _repository = repository;
         }
 
         [HttpGet]
         [ServiceFilter(typeof(ApiLoggingFilter))]
         public ActionResult<IEnumerable<Category>> GetAll()
         {
-            var categories = _context.Categories?.ToList();
-            if (categories == null || !categories.Any())
-            {
-                return NotFound("Categorias não encontradas.");
-            }
+            var categories = _repository.GetAll()?.ToList();
+            
+            if (categories == null)
+                return NotFound("Nenhuma categoria encontrada.");
+            
             return Ok(categories);
         }
 
         [HttpGet("{id:int}")]
         public ActionResult<Category> GetById(int id)
         {
-            var category = _context.Categories?.Find(id);
+            var category = _repository.GetById(id);
+            
             if (category == null)
-            {
                 return NotFound("Categoria não encontrada.");
-            }
+            
             return Ok(category);
         }
 
         [HttpGet("products")]
         public ActionResult<IEnumerable<Category>> GetCategoriesWithProducts()
         {
-            var categories = _context.Categories?.Include(c => c.Products).ToList();
+            var categories = _repository.GetCategoriesWithProducts()?.ToList();
+            
             if (categories == null || !categories.Any())
-            {
                 return NotFound("Categorias com produtos não encontradas.");
-            }
+            
             return Ok(categories);
         }
 
@@ -55,46 +55,28 @@ namespace WebAPI.Controllers
         public ActionResult<Category> Create(Category category)
         {
             if (category == null)
-            {
                 return BadRequest();
-            }
-            category.CreatedAt = DateTime.UtcNow;
-            category.UpdatedAt = DateTime.UtcNow;
-            _context.Categories?.Add(category);
-            _context.SaveChanges();
-            return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
+            
+            var createdCategory = _repository.Create(category);
+            return CreatedAtAction(nameof(GetById), new { id = createdCategory.Id }, createdCategory);
         }
 
         [HttpPut("{id:int}")]
         public ActionResult<Category> Update(int id, Category category)
         {
             if (id != category.Id)
-            {
                 return BadRequest();
-            }
-            var existingCategory = _context.Categories?.Find(id);
-            if (existingCategory == null)
-            {
-                return NotFound("Categoria não encontrada.");
-            }
 
-            existingCategory.UpdatedAt = DateTime.UtcNow;
-            _context.Entry(existingCategory).State = EntityState.Modified;
-            _context.SaveChanges();
-            return Ok(existingCategory);
+            var updatedCategory = _repository.Update(id, category);
+            return Ok(updatedCategory);
         }
 
         [HttpDelete("{id:int}")]
         public ActionResult Delete(int id)
         {
-            var category = _context.Categories?.Find(id);
-            if (category == null)
-            {
-                return NotFound("Categoria não encontrada.");
-            }
-            _context.Categories?.Remove(category);
-            _context.SaveChanges();
-            return NoContent();
+            var excludedCategory = _repository.Delete(id);
+
+            return Ok(excludedCategory);
         }
     }
 }
