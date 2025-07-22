@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace WebAPI.Models
 {
@@ -23,7 +24,9 @@ namespace WebAPI.Models
         public string? UrlImage { get; set; }
 
         public DateTime CreatedAt { get; set; }        
-        public DateTime UpdatedAt { get; set; }        
+        public DateTime UpdatedAt { get; set; }
+        
+        [JsonIgnore]
         public ICollection<Product>? Products { get; set; }        
     }
 }
