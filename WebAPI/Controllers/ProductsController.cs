@@ -63,7 +63,7 @@ namespace WebAPI.Controllers
             if (!_repository.Update(id, product))
                 return NotFound($"Produto com ID {id} não encontrado.");
 
-            return Ok();
+            return Ok(product);
         }
 
         [HttpDelete("{id:int}")]
