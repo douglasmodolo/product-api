@@ -2,11 +2,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using WebAPI.Models.Interfaces;
 
 namespace WebAPI.Models
 {
     [Table("Categories")]
-    public class Category
+    public class Category : IHasTimestamps
     {
         public Category()
         {
