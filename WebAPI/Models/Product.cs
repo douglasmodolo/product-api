@@ -1,11 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using WebAPI.Models.Interfaces;
 
 namespace WebAPI.Models
 {
     [Table("Products")]
-    public class Product
+    public class Product : IHasTimestamps
     {
         [Key]
         public int Id { get; set; }

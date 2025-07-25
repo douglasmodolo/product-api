@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WebAPI.Models;
+using WebAPI.Models.Interfaces;
 
 namespace WebAPI.Context
 {
@@ -16,6 +17,30 @@ namespace WebAPI.Context
         {
             base.OnModelCreating(modelBuilder);
             // Additional model configuration can go here
-        }        
+        }
+
+        public override int SaveChanges()
+        {
+            ApplyTimestamps();
+            return base.SaveChanges();
+        }
+
+        private void ApplyTimestamps()
+        {
+            var now = DateTime.UtcNow;
+
+            foreach (var entry in ChangeTracker.Entries<IHasTimestamps>())
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Entity.CreatedAt = now;
+                    entry.Entity.UpdatedAt = now;
+                }
+                else if (entry.State == EntityState.Modified)
+                {                    
+                    entry.Entity.UpdatedAt = now;
+                }
+            }
+        }
     }
 }

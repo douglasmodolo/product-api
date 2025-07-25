@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using WebAPI.Filters;
 using WebAPI.Models;
-using WebAPI.Repositories;
+using WebAPI.Repositories.Interfaces;
 
 namespace WebAPI.Controllers
 {
@@ -10,7 +9,7 @@ namespace WebAPI.Controllers
     [ApiController]
     public class CategoriesController : ControllerBase
     {
-        private readonly ICategoryRepository _repository;
+        private readonly IRepository<Category> _repository;
 
         public CategoriesController(ICategoryRepository repository)
         {
@@ -32,8 +31,8 @@ namespace WebAPI.Controllers
         [HttpGet("{id:int}")]
         public ActionResult<Category> GetById(int id)
         {
-            var category = _repository.GetById(id);
-            
+            var category = _repository.Get(c => c.Id == id);
+
             if (category == null)
                 return NotFound("Categoria não encontrada.");
             
@@ -43,7 +42,7 @@ namespace WebAPI.Controllers
         [HttpGet("products")]
         public ActionResult<IEnumerable<Category>> GetCategoriesWithProducts()
         {
-            var categories = _repository.GetCategoriesWithProducts()?.ToList();
+            var categories = ((ICategoryRepository)_repository).GetCategoriesWithProducts()?.ToList();
             
             if (categories == null || !categories.Any())
                 return NotFound("Categorias com produtos não encontradas.");
@@ -58,25 +57,31 @@ namespace WebAPI.Controllers
                 return BadRequest();
             
             var createdCategory = _repository.Create(category);
+            
             return CreatedAtAction(nameof(GetById), new { id = createdCategory.Id }, createdCategory);
         }
 
         [HttpPut("{id:int}")]
         public ActionResult<Category> Update(int id, Category category)
         {
-            if (id != category.Id)
-                return BadRequest();
+            if (category == null || id != category.Id)
+                return BadRequest("Categoria inválida ou ID não corresponde.");
 
-            var updatedCategory = _repository.Update(id, category);
+            var updatedCategory = _repository.Update(category);
+            
             return Ok(updatedCategory);
         }
 
         [HttpDelete("{id:int}")]
         public ActionResult Delete(int id)
         {
-            var excludedCategory = _repository.Delete(id);
+            if (id <= 0)
+                return BadRequest("ID inválido.");
 
-            return Ok(excludedCategory);
+            if (!_repository.Delete(id))
+                return NotFound("Categoria não encontrada.");
+
+            return NoContent();
         }
     }
 }
