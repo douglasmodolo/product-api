@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using WebAPI.Context;
 using WebAPI.Repositories.Interfaces;
 
@@ -15,7 +16,7 @@ namespace WebAPI.Repositories
 
         public IEnumerable<T> GetAll()
         {
-            return _context.Set<T>().ToList();
+            return _context.Set<T>().AsNoTracking().ToList();
         }
 
         public T? Get(Expression<Func<T, bool>> predicate)

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebAPI.Models;
 using WebAPI.Repositories.Interfaces;
+using WebAPI.Transactions.Interfaces;
 
 namespace WebAPI.Controllers
 {
@@ -8,17 +9,17 @@ namespace WebAPI.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
-        private readonly IRepository<Product> _repository;
+        private readonly IUnitOfWork _uow;
 
-        public ProductsController(IProductRepository repository)
+        public ProductsController(IUnitOfWork uow)
         {
-            _repository = repository;
+            _uow = uow;
         }
 
         [HttpGet]
         public ActionResult<IEnumerable<Product>> GetAll()
         {
-            var products = _repository.GetAll()?.ToList();
+            var products = _uow.ProductRepository.GetAll()?.ToList();
 
             if (products == null)
                 return NotFound("Nenhum produto encontrado.");
@@ -29,7 +30,7 @@ namespace WebAPI.Controllers
         [HttpGet("{id:int}")]
         public ActionResult<Product> GetById(int id)
         {
-            var product = _repository.Get(p => p.Id == id);
+            var product = _uow.ProductRepository.Get(p => p.Id == id);
 
             if (product == null)
                 return NotFound("Produto não encontrado.");
@@ -40,7 +41,7 @@ namespace WebAPI.Controllers
         [HttpGet("category/{categoryId:int}")]
         public ActionResult<IEnumerable<Product>> GetByCategoryId(int categoryId)
         {
-            var products = ((IProductRepository)_repository).GetProductsByCategoryId(categoryId)?.ToList();
+            var products = ((IProductRepository)_uow.ProductRepository).GetProductsByCategoryId(categoryId)?.ToList();
             
             if (products == null || !products.Any())
                 return NotFound("Nenhum produto encontrado para a categoria especificada.");
@@ -54,7 +55,8 @@ namespace WebAPI.Controllers
             if (product == null)
                 return BadRequest();
                         
-            var createdProduct = _repository.Create(product);
+            var createdProduct = _uow.ProductRepository.Create(product);
+            _uow.Commit();
 
             return CreatedAtAction(nameof(GetById), new { id = createdProduct.Id }, createdProduct);
         }
@@ -65,7 +67,8 @@ namespace WebAPI.Controllers
             if (product == null || id != product.Id)
                 return BadRequest("Produto inválido ou ID não corresponde.");
 
-            var updatedProduct = _repository.Update(product);
+            var updatedProduct = _uow.ProductRepository.Update(product);
+            _uow.Commit();
 
             return Ok(updatedProduct);
         }
@@ -76,7 +79,7 @@ namespace WebAPI.Controllers
             if (id <= 0)
                 return BadRequest("ID inválido.");
 
-            if (!_repository.Delete(id))
+            if (!_uow.ProductRepository.Delete(id))
                 return NotFound("Produto não encontrado.");
 
             return NoContent();

@@ -6,6 +6,8 @@ using WebAPI.Filters;
 using WebAPI.Logging;
 using WebAPI.Repositories;
 using WebAPI.Repositories.Interfaces;
+using WebAPI.Transactions;
+using WebAPI.Transactions.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,9 +30,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 builder.Services.AddScoped<ApiLoggingFilter>();
-builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Logging.AddProvider(new CustomLoggerProvider(new CustomLoggerProviderConfiguration
 {
