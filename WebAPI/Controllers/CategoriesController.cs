@@ -2,6 +2,7 @@
 using WebAPI.Filters;
 using WebAPI.Models;
 using WebAPI.Repositories.Interfaces;
+using WebAPI.Transactions.Interfaces;
 
 namespace WebAPI.Controllers
 {
@@ -9,18 +10,18 @@ namespace WebAPI.Controllers
     [ApiController]
     public class CategoriesController : ControllerBase
     {
-        private readonly IRepository<Category> _repository;
+        private readonly IUnitOfWork _uow;
 
-        public CategoriesController(ICategoryRepository repository)
+        public CategoriesController(IUnitOfWork uow)
         {
-            _repository = repository;
+            _uow = uow;
         }
 
         [HttpGet]
         [ServiceFilter(typeof(ApiLoggingFilter))]
         public ActionResult<IEnumerable<Category>> GetAll()
         {
-            var categories = _repository.GetAll()?.ToList();
+            var categories = _uow.CategoryRepository.GetAll()?.ToList();
             
             if (categories == null)
                 return NotFound("Nenhuma categoria encontrada.");
@@ -31,7 +32,7 @@ namespace WebAPI.Controllers
         [HttpGet("{id:int}")]
         public ActionResult<Category> GetById(int id)
         {
-            var category = _repository.Get(c => c.Id == id);
+            var category = _uow.CategoryRepository.Get(c => c.Id == id);
 
             if (category == null)
                 return NotFound("Categoria não encontrada.");
@@ -42,7 +43,7 @@ namespace WebAPI.Controllers
         [HttpGet("products")]
         public ActionResult<IEnumerable<Category>> GetCategoriesWithProducts()
         {
-            var categories = ((ICategoryRepository)_repository).GetCategoriesWithProducts()?.ToList();
+            var categories = ((ICategoryRepository)_uow.CategoryRepository).GetCategoriesWithProducts()?.ToList();
             
             if (categories == null || !categories.Any())
                 return NotFound("Categorias com produtos não encontradas.");
@@ -56,7 +57,7 @@ namespace WebAPI.Controllers
             if (category == null)
                 return BadRequest();
             
-            var createdCategory = _repository.Create(category);
+            var createdCategory = _uow.CategoryRepository.Create(category);
             
             return CreatedAtAction(nameof(GetById), new { id = createdCategory.Id }, createdCategory);
         }
@@ -67,7 +68,7 @@ namespace WebAPI.Controllers
             if (category == null || id != category.Id)
                 return BadRequest("Categoria inválida ou ID não corresponde.");
 
-            var updatedCategory = _repository.Update(category);
+            var updatedCategory = _uow.CategoryRepository.Update(category);
             
             return Ok(updatedCategory);
         }
@@ -78,7 +79,7 @@ namespace WebAPI.Controllers
             if (id <= 0)
                 return BadRequest("ID inválido.");
 
-            if (!_repository.Delete(id))
+            if (!_uow.CategoryRepository.Delete(id))
                 return NotFound("Categoria não encontrada.");
 
             return NoContent();
