@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using WebAPI.DTOs;
 using WebAPI.Models;
 using WebAPI.Repositories.Interfaces;
 using WebAPI.Transactions.Interfaces;
@@ -10,67 +12,82 @@ namespace WebAPI.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly IUnitOfWork _uow;
+        private readonly IMapper _mapper;
 
-        public ProductsController(IUnitOfWork uow)
+        public ProductsController(IUnitOfWork uow, IMapper mapper)
         {
             _uow = uow;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        public ActionResult<IEnumerable<Product>> GetAll()
+        public ActionResult<IEnumerable<ProductDTO>> GetAll()
         {
             var products = _uow.ProductRepository.GetAll()?.ToList();
 
             if (products == null)
                 return NotFound("Nenhum produto encontrado.");
             
-            return Ok(products);
+            var productsDto = _mapper.Map<IEnumerable<ProductDTO>>(products);
+
+            return Ok(productsDto);
         }
 
         [HttpGet("{id:int}")]
-        public ActionResult<Product> GetById(int id)
+        public ActionResult<ProductDTO> GetById(int id)
         {
             var product = _uow.ProductRepository.Get(p => p.Id == id);
 
             if (product == null)
                 return NotFound("Produto não encontrado.");
             
-            return Ok(product);
+            var productDto = _mapper.Map<ProductDTO>(product);
+
+            return Ok(productDto);
         }
 
         [HttpGet("category/{categoryId:int}")]
-        public ActionResult<IEnumerable<Product>> GetByCategoryId(int categoryId)
+        public ActionResult<IEnumerable<ProductDTO>> GetByCategoryId(int categoryId)
         {
             var products = ((IProductRepository)_uow.ProductRepository).GetProductsByCategoryId(categoryId)?.ToList();
             
             if (products == null || !products.Any())
                 return NotFound("Nenhum produto encontrado para a categoria especificada.");
-            
-            return Ok(products);
+
+            var productDtos = _mapper.Map<IEnumerable<ProductDTO>>(products).ToList();
+
+            return Ok(productDtos);
         }
 
         [HttpPost]
-        public ActionResult<Product> Create(Product product)
+        public ActionResult<ProductDTO> Create(ProductDTO productDto)
         {
-            if (product == null)
+            if (productDto == null)
                 return BadRequest();
-                        
+            
+            var product = _mapper.Map<Product>(productDto);
             var createdProduct = _uow.ProductRepository.Create(product);
             _uow.Commit();
 
-            return CreatedAtAction(nameof(GetById), new { id = createdProduct.Id }, createdProduct);
+            var createdProductDto = _mapper.Map<ProductDTO>(createdProduct);
+
+            return CreatedAtAction(nameof(GetById), new { id = createdProductDto.Id }, createdProductDto);
         }
 
         [HttpPut("{id:int}")]
-        public ActionResult<Product> Update(int id, Product product)
+        public ActionResult<ProductDTO> Update(int id, ProductDTO productDto)
         {
-            if (product == null || id != product.Id)
+            if (productDto == null || id != productDto.Id)
                 return BadRequest("Produto inválido ou ID não corresponde.");
+
+            var product = _mapper.Map<Product>(productDto);
 
             var updatedProduct = _uow.ProductRepository.Update(product);
             _uow.Commit();
 
-            return Ok(updatedProduct);
+            var updatedProductDto = _mapper.Map<ProductDTO>(updatedProduct);
+
+            return Ok(updatedProductDto);
         }
 
         [HttpDelete("{id:int}")]
