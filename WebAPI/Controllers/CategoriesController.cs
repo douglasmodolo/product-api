@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebAPI.DTOs;
+using WebAPI.DTOs.Mappings;
 using WebAPI.Filters;
 using WebAPI.Models;
 using WebAPI.Repositories.Interfaces;
@@ -27,12 +28,7 @@ namespace WebAPI.Controllers
             if (categories == null)
                 return NotFound("Nenhuma categoria encontrada.");
             
-            var categoryDtos = categories.Select(c => new CategoryDTO
-            {
-                Id = c.Id,
-                Name = c.Name,
-                UrlImage = c.UrlImage
-            }).ToList();
+            var categoryDtos = categories.ToCategoryDTOList();
 
             return Ok(categoryDtos);
         }
@@ -45,14 +41,9 @@ namespace WebAPI.Controllers
             if (category == null)
                 return NotFound("Categoria não encontrada.");
             
-            var categoryDto = new CategoryDTO
-            {
-                Id = category.Id,
-                Name = category.Name,
-                UrlImage = category.UrlImage
-            };
+            var categoryDto = category.ToCategoryDTO();
 
-            return Ok(category);
+            return Ok(categoryDto);
         }
 
         [HttpGet("products")]
@@ -84,23 +75,13 @@ namespace WebAPI.Controllers
         [HttpPost]
         public ActionResult<CategoryDTO> Create(CategoryDTO categoryDto)
         {
-            if (categoryDto == null)
-                return BadRequest();
-            
-            var category = new Category
-            {
-                Name = categoryDto.Name,
-                UrlImage = categoryDto.UrlImage
-            };
+            if (categoryDto == null) return BadRequest();
+
+            var category = categoryDto.ToCategory();
 
             var createdCategory = _uow.CategoryRepository.Create(category);
-            
-            var createdCategoryDto = new CategoryDTO
-            {
-                Id = createdCategory.Id,
-                Name = createdCategory.Name,
-                UrlImage = createdCategory.UrlImage
-            };
+
+            var createdCategoryDto = createdCategory.ToCategoryDTO();
 
             return CreatedAtAction(nameof(GetById), new { id = createdCategoryDto.Id }, createdCategoryDto);
         }
@@ -111,21 +92,11 @@ namespace WebAPI.Controllers
             if (categoryDto == null || id != categoryDto.Id)
                 return BadRequest("Categoria inválida ou ID não corresponde.");
 
-            var category = new Category
-            {
-                Id = categoryDto.Id,
-                Name = categoryDto.Name,
-                UrlImage = categoryDto.UrlImage
-            };
+            var category = categoryDto.ToCategory();
 
             var updatedCategory = _uow.CategoryRepository.Update(category);
 
-            var updatedCategoryDto = new CategoryDTO
-            {
-                Id = updatedCategory.Id,
-                Name = updatedCategory.Name,
-                UrlImage = updatedCategory.UrlImage
-            };
+            var updatedCategoryDto = updatedCategory.ToCategoryDTO();
 
             return Ok(updatedCategoryDto);
         }
