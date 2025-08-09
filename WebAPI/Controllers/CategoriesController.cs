@@ -47,27 +47,25 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("products")]
-        public ActionResult<IEnumerable<CategoryDTO>> GetCategoriesWithProducts()
+        public ActionResult<IEnumerable<Category>> GetCategoriesWithProducts()
         {
             var categories = ((ICategoryRepository)_uow.CategoryRepository).GetCategoriesWithProducts()?.ToList();
             
             if (categories == null || !categories.Any())
                 return NotFound("Categorias com produtos não encontradas.");
 
-            //var categoryDtos = categories.Select(c => new CategoryDTO
-            //{
-            //    Id = c.Id,
-            //    Name = c.Name,
-            //    UrlImage = c.UrlImage,
-            //    Products = c.Products?.Select(p => new ProductDTO
-            //    {
-            //        Id = p.Id,
-            //        Name = p.Name,
-            //        Price = p.Price
-            //    }).ToList() ?? new List<ProductDTO>()
-            //}).ToList();
-
-            //return Ok(categoryDtos);
+            var category = categories.Select(c => new Category
+            {
+                Id = c.Id,
+                Name = c.Name,
+                UrlImage = c.UrlImage,
+                Products = c.Products?.Select(p => new Product
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Price = p.Price
+                }).ToList() ?? new List<Product>()
+            }).ToList();
 
             return Ok(categories);
         }
