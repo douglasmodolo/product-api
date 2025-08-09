@@ -30,7 +30,7 @@ namespace WebAPI.DTOs.Mappings
                 UrlImage = categoryDTO.UrlImage
             };
 
-            return category;               
+            return category;
         }
 
         public static IEnumerable<CategoryDTO> ToCategoryDTOList(this IEnumerable<Category> categories)
