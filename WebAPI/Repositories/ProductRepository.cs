@@ -12,13 +12,22 @@ namespace WebAPI.Repositories
         {         
         }
 
-        public IEnumerable<Product>? GetAllPaginated(ProductsParameters productsParams)
+        //public IEnumerable<Product>? GetAllPaginated(ProductsParameters productsParams)
+        //{
+        //    return GetAll()
+        //        .OrderBy(p => p.Name)
+        //        .Skip((productsParams.PageNumber - 1) * productsParams.PageSize)
+        //        .Take(productsParams.PageSize)
+        //        .ToList();
+        //}
+
+        public PagedList<Product>? GetAllPaginated(ProductsParameters productsParams)
         {
-            return GetAll()
-                .OrderBy(p => p.Name)
-                .Skip((productsParams.PageNumber - 1) * productsParams.PageSize)
-                .Take(productsParams.PageSize)
-                .ToList();
+            var products = GetAll()
+                .OrderBy(p => p.Id)
+                .AsQueryable();
+
+            return PagedList<Product>.ToPagedList(products, productsParams.PageNumber, productsParams.PageSize);
         }
 
         public IEnumerable<Product>? GetProductsByCategoryId(int categoryId)
