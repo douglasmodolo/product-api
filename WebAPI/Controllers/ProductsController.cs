@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using WebAPI.DTOs;
 using WebAPI.Models;
 using WebAPI.Pagination;
@@ -25,10 +26,22 @@ namespace WebAPI.Controllers
         [HttpGet("pagination")]
         public ActionResult<IEnumerable<ProductDTO>> GetAllPaginated([FromQuery] ProductsParameters productsParameters)
         {
-            var products = _uow.ProductRepository.GetAllPaginated(productsParameters)?.ToList();
+            var products = _uow.ProductRepository.GetAllPaginated(productsParameters);
 
             if (products == null || !products.Any())
                 return NotFound("Nenhum produto encontrado.");
+
+            var metadata = new
+            {
+                products.TotalCount,
+                products.PageSize,
+                products.PageNumber,
+                products.TotalPages,
+                products.HasNextPage,
+                products.HasPreviousPage
+            };
+
+            Response.Headers.Append("X-Pagination", JsonConvert.SerializeObject(metadata));
 
             var productsDto = _mapper.Map<IEnumerable<ProductDTO>>(products);
 
