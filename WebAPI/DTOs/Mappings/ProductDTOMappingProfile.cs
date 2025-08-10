@@ -8,6 +8,8 @@ namespace WebAPI.DTOs.Mappings
         public ProductDTOMappingProfile()
         {
             CreateMap<Product, ProductDTO>().ReverseMap();
+            CreateMap<Product, UpdateProductRequestDto>().ReverseMap();
+            CreateMap<Product, UpdateProductResponseDto>().ReverseMap();
         }
     }
 }
