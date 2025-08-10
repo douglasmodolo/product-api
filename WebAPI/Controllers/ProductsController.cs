@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using WebAPI.DTOs;
 using WebAPI.Models;
+using WebAPI.Pagination;
 using WebAPI.Repositories.Interfaces;
 using WebAPI.Transactions.Interfaces;
 
@@ -19,6 +20,19 @@ namespace WebAPI.Controllers
         {
             _uow = uow;
             _mapper = mapper;
+        }
+
+        [HttpGet("pagination")]
+        public ActionResult<IEnumerable<ProductDTO>> GetAllPaginated([FromQuery] ProductsParameters productsParameters)
+        {
+            var products = _uow.ProductRepository.GetAllPaginated(productsParameters)?.ToList();
+
+            if (products == null || !products.Any())
+                return NotFound("Nenhum produto encontrado.");
+
+            var productsDto = _mapper.Map<IEnumerable<ProductDTO>>(products);
+
+            return Ok(productsDto);
         }
 
         [HttpGet]
