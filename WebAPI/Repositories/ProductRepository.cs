@@ -1,5 +1,6 @@
 ﻿using WebAPI.Context;
 using WebAPI.Models;
+using WebAPI.Pagination;
 using WebAPI.Repositories.Interfaces;
 
 namespace WebAPI.Repositories
@@ -9,6 +10,15 @@ namespace WebAPI.Repositories
 
         public ProductRepository(AppDbContext context) : base(context)
         {         
+        }
+
+        public IEnumerable<Product>? GetAllPaginated(ProductsParameters productsParams)
+        {
+            return GetAll()
+                .OrderBy(p => p.Name)
+                .Skip((productsParams.PageNumber - 1) * productsParams.PageSize)
+                .Take(productsParams.PageSize)
+                .ToList();
         }
 
         public IEnumerable<Product>? GetProductsByCategoryId(int categoryId)
