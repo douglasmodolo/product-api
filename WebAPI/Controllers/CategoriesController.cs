@@ -3,6 +3,7 @@ using WebAPI.DTOs;
 using WebAPI.DTOs.Mappings;
 using WebAPI.Filters;
 using WebAPI.Models;
+using WebAPI.Pagination;
 using WebAPI.Repositories.Interfaces;
 using WebAPI.Transactions.Interfaces;
 
@@ -17,6 +18,31 @@ namespace WebAPI.Controllers
         public CategoriesController(IUnitOfWork uow)
         {
             _uow = uow;
+        }
+
+        [HttpGet("pagination")]
+        public ActionResult<IEnumerable<CategoryDTO>> GetAllPaginated([FromQuery] CategoriesParameters categoriesParameters)
+        {
+            var categories = _uow.CategoryRepository.GetAllPaginated(categoriesParameters);
+            
+            if (categories == null || !categories.Any())
+                return NotFound("Nenhuma categoria encontrada.");
+            
+            var metadata = new
+            {
+                categories.TotalCount,
+                categories.PageSize,
+                categories.PageNumber,
+                categories.TotalPages,
+                categories.HasNextPage,
+                categories.HasPreviousPage
+            };
+            
+            Response.Headers.Append("X-Pagination", System.Text.Json.JsonSerializer.Serialize(metadata));
+            
+            var categoryDtos = categories.ToCategoryDTOList();
+           
+            return Ok(categoryDtos);
         }
 
         [HttpGet]
