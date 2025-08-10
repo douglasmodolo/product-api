@@ -19,6 +19,7 @@ Este projeto foi criado como parte do curso **"Web API ASP .NET Core Essencial (
 - Relacionamento entre produtos e categorias
 - Validações básicas
 - Documentação interativa com Swagger
+- **Atualização parcial de produtos com PATCH (JSON Patch)**
 
 ## 📂 Estrutura do Projeto
 
@@ -71,6 +72,61 @@ ProductApi/
    ```
    https://localhost:xxxx/swagger
    ```
+
+---
+
+## ✏️ Atualização Parcial de Produtos (`PATCH`)
+
+A API permite atualizar parcialmente um produto usando o formato [JSON Patch](https://datatracker.ietf.org/doc/html/rfc6902).  
+O endpoint recebe operações como `replace`, `add` e `remove` para modificar apenas os campos desejados.
+
+### **Endpoint**
+```http
+PATCH /api/products/{id}/UpdatePartial
+```
+
+### **Exemplo de requisição**
+```json
+[
+  {
+    "path": "/stock",
+    "op": "replace",
+    "value": 16
+  },
+  {
+    "path": "/price",
+    "op": "replace",
+    "value": 87.6
+  }
+]
+```
+
+- **path**: caminho da propriedade a ser alterada (respeitando a capitalização usada no DTO).
+- **op**: operação (`replace`, `add` ou `remove`).
+- **value**: valor a ser atribuído.
+
+> É possível enviar **mais de uma alteração no mesmo request**.
+
+### **Exemplo com cURL**
+```bash
+curl -X PATCH "https://localhost:5001/api/products/1/UpdatePartial" -H "Content-Type: application/json-patch+json" -d '[
+  { "path": "/stock", "op": "replace", "value": 16 },
+  { "path": "/price", "op": "replace", "value": 87.6 }
+]'
+```
+
+### **Resposta**
+```json
+{
+  "id": 1,
+  "name": "Produto A",
+  "price": 87.6,
+  "stock": 16,
+  "categoryName": "Categoria X"
+}
+```
+
+---
 
 ## 📚 Fonte de Estudo
 

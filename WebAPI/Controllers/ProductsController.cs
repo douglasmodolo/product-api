@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using WebAPI.DTOs;
 using WebAPI.Models;
@@ -73,6 +74,33 @@ namespace WebAPI.Controllers
 
             return CreatedAtAction(nameof(GetById), new { id = createdProductDto.Id }, createdProductDto);
         }
+
+        [HttpPatch("{id:int}/UpdatePartial")]
+        public ActionResult<UpdateProductResponseDto> Patch(int id, JsonPatchDocument<UpdateProductRequestDto> patchProductDto)
+        {
+            if (patchProductDto == null || id <= 0)
+                return BadRequest("Dados inválidos.");
+
+            var product = _uow.ProductRepository.Get(p => p.Id == id);
+
+            if (product == null)
+                return NotFound("Produto não encontrado.");
+
+            var productToPatch = _mapper.Map<UpdateProductRequestDto>(product);
+            patchProductDto.ApplyTo(productToPatch, ModelState);
+
+            if (!TryValidateModel(productToPatch))
+                return ValidationProblem(ModelState);
+
+            _mapper.Map(productToPatch, product);
+
+            _uow.ProductRepository.Update(product);
+            _uow.Commit();
+
+            var updatedProductDto = _mapper.Map<UpdateProductResponseDto>(product);
+            return Ok(updatedProductDto);
+        }
+
 
         [HttpPut("{id:int}")]
         public ActionResult<ProductDTO> Update(int id, ProductDTO productDto)
