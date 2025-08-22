@@ -21,6 +21,18 @@ namespace WebAPI.Repositories
             return PagedList<Category>.ToPagedList(categories, categoriesParams.PageNumber, categoriesParams.PageSize);
         }
 
+        public PagedList<Category>? GetCategoriesNameFilter(CategoriesNameFilter categoriesNameFilter)
+        {
+            var categories = GetAll()
+                .OrderBy(c => c.Id)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(categoriesNameFilter.Name))
+                categories = categories.Where(c => c.Name!.ToLower().Contains(categoriesNameFilter.Name.ToLower()));
+            
+            return PagedList<Category>.ToPagedList(categories, categoriesNameFilter.PageNumber, categoriesNameFilter.PageSize);
+        }
+
         public IEnumerable<Category>? GetCategoriesWithProducts()
         {
             return _context.Categories?
