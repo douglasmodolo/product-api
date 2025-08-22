@@ -34,5 +34,32 @@ namespace WebAPI.Repositories
         {
             return GetAll().Where(p => p.CategoryId == categoryId).ToList();
         }
+
+        public PagedList<Product>? GetProductsPriceFilter(ProductsPriceFilter productsPriceFilter)
+        {
+            var products = GetAll().AsQueryable();
+
+            if (productsPriceFilter.Price.HasValue && !string.IsNullOrEmpty(productsPriceFilter.PriceCriterias))
+            {
+                switch (productsPriceFilter.PriceCriterias.ToLower())
+                {
+                    case "greaterthan":
+                        products = products.Where(p => p.Price > productsPriceFilter.Price.Value);
+                        break;
+                    case "lessthan":
+                        products = products.Where(p => p.Price < productsPriceFilter.Price.Value);
+                        break;
+                    case "equalto":
+                        products = products.Where(p => p.Price == productsPriceFilter.Price.Value);
+                        break;
+                    default:
+                        throw new ArgumentException("Invalid price criteria specified.");
+                }
+            }
+
+            var pagedProducts = PagedList<Product>.ToPagedList(products, productsPriceFilter.PageNumber, productsPriceFilter.PageSize);
+
+            return pagedProducts;
+        }
     }
 }
