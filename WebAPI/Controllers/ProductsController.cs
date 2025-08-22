@@ -31,22 +31,19 @@ namespace WebAPI.Controllers
             if (products == null || !products.Any())
                 return NotFound("Nenhum produto encontrado.");
 
-            var metadata = new
-            {
-                products.TotalCount,
-                products.PageSize,
-                products.PageNumber,
-                products.TotalPages,
-                products.HasNextPage,
-                products.HasPreviousPage
-            };
-
-            Response.Headers.Append("X-Pagination", JsonConvert.SerializeObject(metadata));
-
-            var productsDto = _mapper.Map<IEnumerable<ProductDTO>>(products);
-
-            return Ok(productsDto);
+            return BuildPaginatedProductsResponse(products);
         }
+
+        [HttpGet("filter/price/pagination")]
+        public ActionResult<IEnumerable<ProductDTO>> GetAllPaginatedByPrice([FromQuery] ProductsPriceFilter productsPriceFilter)
+        {
+            var products = _uow.ProductRepository.GetProductsPriceFilter(productsPriceFilter);
+
+            if (products == null || !products.Any())
+                return NotFound("Nenhum produto encontrado com os filtros de preço especificados.");
+            
+            return BuildPaginatedProductsResponse(products);
+        }        
 
         [HttpGet]
         public ActionResult<IEnumerable<ProductDTO>> GetAll()
@@ -156,5 +153,26 @@ namespace WebAPI.Controllers
 
             return NoContent();
         }
+
+        #region privateMethods
+        private ActionResult<IEnumerable<ProductDTO>> BuildPaginatedProductsResponse(PagedList<Product> products)
+        {
+            var metadata = new
+            {
+                products.TotalCount,
+                products.PageSize,
+                products.PageNumber,
+                products.TotalPages,
+                products.HasNextPage,
+                products.HasPreviousPage
+            };
+
+            Response.Headers.Append("X-Pagination", JsonConvert.SerializeObject(metadata));
+
+            var productsDto = _mapper.Map<IEnumerable<ProductDTO>>(products);
+
+            return Ok(productsDto);
+        }
+        #endregion
     }
 }

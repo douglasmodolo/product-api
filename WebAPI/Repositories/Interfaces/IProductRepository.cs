@@ -7,6 +7,8 @@ namespace WebAPI.Repositories.Interfaces
     {
         //IEnumerable<Product>? GetAllPaginated(ProductsParameters productsParams);
         PagedList<Product>? GetAllPaginated(ProductsParameters productsParams);
+        PagedList<Product>? GetProductsPriceFilter(ProductsPriceFilter productsPriceFilter);
         IEnumerable<Product>? GetProductsByCategoryId(int categoryId);
+
     }
 }
