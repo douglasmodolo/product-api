@@ -27,7 +27,23 @@ namespace WebAPI.Controllers
             
             if (categories == null || !categories.Any())
                 return NotFound("Nenhuma categoria encontrada.");
-            
+
+            return BuildPaginatedCategoriesResponse(categories);
+        }
+
+        [HttpGet("filter/name/pagination")]
+        public ActionResult<IEnumerable<CategoryDTO>> GetAllPaginatedByName([FromQuery] CategoriesNameFilter categoriesNameFilter)
+        {
+            var categories = _uow.CategoryRepository.GetCategoriesNameFilter(categoriesNameFilter);
+
+            if (categories == null || !categories.Any())
+                return NotFound("Nenhuma categoria encontrada com o filtro de nome especificado.");
+
+            return BuildPaginatedCategoriesResponse(categories);
+        }
+
+        private ActionResult<IEnumerable<CategoryDTO>> BuildPaginatedCategoriesResponse(PagedList<Category> categories)
+        {
             var metadata = new
             {
                 categories.TotalCount,
@@ -37,11 +53,11 @@ namespace WebAPI.Controllers
                 categories.HasNextPage,
                 categories.HasPreviousPage
             };
-            
+
             Response.Headers.Append("X-Pagination", System.Text.Json.JsonSerializer.Serialize(metadata));
-            
+
             var categoryDtos = categories.ToCategoryDTOList();
-           
+
             return Ok(categoryDtos);
         }
 
