@@ -6,6 +6,7 @@ using WebAPI.Models;
 using WebAPI.Pagination;
 using WebAPI.Repositories.Interfaces;
 using WebAPI.Transactions.Interfaces;
+using X.PagedList;
 
 namespace WebAPI.Controllers
 {
@@ -21,9 +22,9 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("pagination")]
-        public ActionResult<IEnumerable<CategoryDTO>> GetAllPaginated([FromQuery] CategoriesParameters categoriesParameters)
+        public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetAllPaginated([FromQuery] CategoriesParameters categoriesParameters)
         {
-            var categories = _uow.CategoryRepository.GetAllPaginated(categoriesParameters);
+            var categories = await _uow.CategoryRepository.GetAllPaginatedAsync(categoriesParameters);
             
             if (categories == null || !categories.Any())
                 return NotFound("Nenhuma categoria encontrada.");
@@ -32,40 +33,21 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("filter/name/pagination")]
-        public ActionResult<IEnumerable<CategoryDTO>> GetAllPaginatedByName([FromQuery] CategoriesNameFilter categoriesNameFilter)
+        public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetAllPaginatedByName([FromQuery] CategoriesNameFilter categoriesNameFilter)
         {
-            var categories = _uow.CategoryRepository.GetCategoriesNameFilter(categoriesNameFilter);
+            var categories = await _uow.CategoryRepository.GetCategoriesNameFilterAsync(categoriesNameFilter);
 
             if (categories == null || !categories.Any())
                 return NotFound("Nenhuma categoria encontrada com o filtro de nome especificado.");
 
             return BuildPaginatedCategoriesResponse(categories);
-        }
-
-        private ActionResult<IEnumerable<CategoryDTO>> BuildPaginatedCategoriesResponse(PagedList<Category> categories)
-        {
-            var metadata = new
-            {
-                categories.TotalCount,
-                categories.PageSize,
-                categories.PageNumber,
-                categories.TotalPages,
-                categories.HasNextPage,
-                categories.HasPreviousPage
-            };
-
-            Response.Headers.Append("X-Pagination", System.Text.Json.JsonSerializer.Serialize(metadata));
-
-            var categoryDtos = categories.ToCategoryDTOList();
-
-            return Ok(categoryDtos);
-        }
+        }        
 
         [HttpGet]
         [ServiceFilter(typeof(ApiLoggingFilter))]
-        public ActionResult<IEnumerable<CategoryDTO>> GetAll()
+        public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetAll()
         {
-            var categories = _uow.CategoryRepository.GetAll()?.ToList();
+            var categories = await _uow.CategoryRepository.GetAllAsync();
             
             if (categories == null)
                 return NotFound("Nenhuma categoria encontrada.");
@@ -76,9 +58,9 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("{id:int}")]
-        public ActionResult<CategoryDTO> GetById(int id)
+        public async Task<ActionResult<CategoryDTO>> GetById(int id)
         {
-            var category = _uow.CategoryRepository.Get(c => c.Id == id);
+            var category = await _uow.CategoryRepository.GetAsync(c => c.Id == id);
 
             if (category == null)
                 return NotFound("Categoria não encontrada.");
@@ -89,9 +71,9 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("products")]
-        public ActionResult<IEnumerable<Category>> GetCategoriesWithProducts()
+        public async Task<ActionResult<IEnumerable<Category>>> GetCategoriesWithProducts()
         {
-            var categories = ((ICategoryRepository)_uow.CategoryRepository).GetCategoriesWithProducts()?.ToList();
+            var categories = await ((ICategoryRepository)_uow.CategoryRepository).GetCategoriesWithProductsAsync();
             
             if (categories == null || !categories.Any())
                 return NotFound("Categorias com produtos não encontradas.");
@@ -119,9 +101,18 @@ namespace WebAPI.Controllers
 
             var category = categoryDto.ToCategory();
 
+            if (category == null)
+                return BadRequest("Erro ao converter DTO para entidade.");
+
             var createdCategory = _uow.CategoryRepository.Create(category);
 
+            if (createdCategory == null)
+                return BadRequest("Erro ao criar a categoria.");
+
             var createdCategoryDto = createdCategory.ToCategoryDTO();
+
+            if (createdCategoryDto == null)
+                return BadRequest("Erro ao converter entidade para DTO.");
 
             return CreatedAtAction(nameof(GetById), new { id = createdCategoryDto.Id }, createdCategoryDto);
         }
@@ -133,6 +124,9 @@ namespace WebAPI.Controllers
                 return BadRequest("Categoria inválida ou ID não corresponde.");
 
             var category = categoryDto.ToCategory();
+
+            if (category == null)
+                return BadRequest("Erro ao converter DTO para entidade.");
 
             var updatedCategory = _uow.CategoryRepository.Update(category);
 
@@ -152,5 +146,26 @@ namespace WebAPI.Controllers
 
             return NoContent();
         }
+
+        #region privateMethods
+        private ActionResult<IEnumerable<CategoryDTO>> BuildPaginatedCategoriesResponse(IPagedList<Category> categories)
+        {
+            var metadata = new
+            {
+                categories.TotalItemCount,
+                categories.PageSize,
+                categories.PageNumber,
+                categories.PageCount,
+                categories.HasNextPage,
+                categories.HasPreviousPage
+            };
+
+            Response.Headers.Append("X-Pagination", System.Text.Json.JsonSerializer.Serialize(metadata));
+
+            var categoryDtos = categories.ToCategoryDTOList();
+
+            return Ok(categoryDtos);
+        }
+        #endregion
     }
 }

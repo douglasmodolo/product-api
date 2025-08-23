@@ -3,6 +3,7 @@ using WebAPI.Context;
 using WebAPI.Models;
 using WebAPI.Pagination;
 using WebAPI.Repositories.Interfaces;
+using X.PagedList;
 
 namespace WebAPI.Repositories
 {
@@ -12,32 +13,40 @@ namespace WebAPI.Repositories
         {
         }
 
-        public PagedList<Category>? GetAllPaginated(CategoriesParameters categoriesParams)
+        public async Task<IPagedList<Category>?> GetAllPaginatedAsync(CategoriesParameters categoriesParams)
         {
-            var categories = GetAll()
-                .OrderBy(c => c.Id)
-                .AsQueryable();
+            var categories = await GetAllAsync();
+            var ordenedCategories = categories.OrderBy(c => c.Id).AsQueryable();
 
-            return PagedList<Category>.ToPagedList(categories, categoriesParams.PageNumber, categoriesParams.PageSize);
+            var pagedCategories = await ordenedCategories.ToPagedListAsync(categoriesParams.PageNumber, categoriesParams.PageSize);
+
+            return pagedCategories;
         }
 
-        public PagedList<Category>? GetCategoriesNameFilter(CategoriesNameFilter categoriesNameFilter)
+        public async Task<IPagedList<Category>?> GetCategoriesNameFilterAsync(CategoriesNameFilter categoriesNameFilter)
         {
-            var categories = GetAll()
-                .OrderBy(c => c.Id)
-                .AsQueryable();
+            var categories = await GetAllAsync();
+            var ordenedeCategories = categories.AsQueryable();
 
             if (!string.IsNullOrEmpty(categoriesNameFilter.Name))
-                categories = categories.Where(c => c.Name!.ToLower().Contains(categoriesNameFilter.Name.ToLower()));
+                ordenedeCategories = ordenedeCategories.Where(c => c.Name!.ToLower().Contains(categoriesNameFilter.Name.ToLower()));
             
-            return PagedList<Category>.ToPagedList(categories, categoriesNameFilter.PageNumber, categoriesNameFilter.PageSize);
+            if (ordenedeCategories == null)
+                return null;
+
+            var pagedCategories = await ordenedeCategories.ToPagedListAsync(categoriesNameFilter.PageNumber, categoriesNameFilter.PageSize);
+
+            return pagedCategories;
         }
 
-        public IEnumerable<Category>? GetCategoriesWithProducts()
+        public async Task<IEnumerable<Category>?> GetCategoriesWithProductsAsync()
         {
-            return _context.Categories?
-                .Include(c => c.Products)
-                .ToList();
+            if (_context.Categories == null)
+                return null;
+
+            var categoriesWithProducts = await _context.Categories.Include(c => c.Products).ToListAsync();
+
+            return categoriesWithProducts;
         }
     }
 }
