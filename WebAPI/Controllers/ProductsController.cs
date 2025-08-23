@@ -7,6 +7,7 @@ using WebAPI.Models;
 using WebAPI.Pagination;
 using WebAPI.Repositories.Interfaces;
 using WebAPI.Transactions.Interfaces;
+using X.PagedList;
 
 namespace WebAPI.Controllers
 {
@@ -24,9 +25,9 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("pagination")]
-        public ActionResult<IEnumerable<ProductDTO>> GetAllPaginated([FromQuery] ProductsParameters productsParameters)
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetAllPaginated([FromQuery] ProductsParameters productsParameters)
         {
-            var products = _uow.ProductRepository.GetAllPaginated(productsParameters);
+            var products = await _uow.ProductRepository.GetAllPaginatedAsync(productsParameters);
 
             if (products == null || !products.Any())
                 return NotFound("Nenhum produto encontrado.");
@@ -35,9 +36,9 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("filter/price/pagination")]
-        public ActionResult<IEnumerable<ProductDTO>> GetAllPaginatedByPrice([FromQuery] ProductsPriceFilter productsPriceFilter)
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetAllPaginatedByPrice([FromQuery] ProductsPriceFilter productsPriceFilter)
         {
-            var products = _uow.ProductRepository.GetProductsPriceFilter(productsPriceFilter);
+            var products = await _uow.ProductRepository.GetProductsPriceFilterAsync(productsPriceFilter);
 
             if (products == null || !products.Any())
                 return NotFound("Nenhum produto encontrado com os filtros de preço especificados.");
@@ -46,9 +47,9 @@ namespace WebAPI.Controllers
         }        
 
         [HttpGet]
-        public ActionResult<IEnumerable<ProductDTO>> GetAll()
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetAll()
         {
-            var products = _uow.ProductRepository.GetAll()?.ToList();
+            var products = await _uow.ProductRepository.GetAllAsync();
 
             if (products == null)
                 return NotFound("Nenhum produto encontrado.");
@@ -59,9 +60,9 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("{id:int}")]
-        public ActionResult<ProductDTO> GetById(int id)
+        public async Task<ActionResult<ProductDTO>> GetById(int id)
         {
-            var product = _uow.ProductRepository.Get(p => p.Id == id);
+            var product = await _uow.ProductRepository.GetAsync(p => p.Id == id);
 
             if (product == null)
                 return NotFound("Produto não encontrado.");
@@ -72,9 +73,9 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("category/{categoryId:int}")]
-        public ActionResult<IEnumerable<ProductDTO>> GetByCategoryId(int categoryId)
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetByCategoryId(int categoryId)
         {
-            var products = ((IProductRepository)_uow.ProductRepository).GetProductsByCategoryId(categoryId)?.ToList();
+            var products = await ((IProductRepository)_uow.ProductRepository).GetProductsByCategoryIdAsync(categoryId);
             
             if (products == null || !products.Any())
                 return NotFound("Nenhum produto encontrado para a categoria especificada.");
@@ -85,14 +86,14 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost]
-        public ActionResult<ProductDTO> Create(ProductDTO productDto)
+        public async Task<ActionResult<ProductDTO>> Create(ProductDTO productDto)
         {
             if (productDto == null)
                 return BadRequest();
             
             var product = _mapper.Map<Product>(productDto);
             var createdProduct = _uow.ProductRepository.Create(product);
-            _uow.Commit();
+            await _uow.CommitAsync();
 
             var createdProductDto = _mapper.Map<ProductDTO>(createdProduct);
 
@@ -100,12 +101,12 @@ namespace WebAPI.Controllers
         }
 
         [HttpPatch("{id:int}/UpdatePartial")]
-        public ActionResult<UpdateProductResponseDto> Patch(int id, JsonPatchDocument<UpdateProductRequestDto> patchProductDto)
+        public async Task<ActionResult<UpdateProductResponseDto>> Patch(int id, JsonPatchDocument<UpdateProductRequestDto> patchProductDto)
         {
             if (patchProductDto == null || id <= 0)
                 return BadRequest("Dados inválidos.");
 
-            var product = _uow.ProductRepository.Get(p => p.Id == id);
+            var product = await _uow.ProductRepository.GetAsync(p => p.Id == id);
 
             if (product == null)
                 return NotFound("Produto não encontrado.");
@@ -119,7 +120,7 @@ namespace WebAPI.Controllers
             _mapper.Map(productToPatch, product);
 
             _uow.ProductRepository.Update(product);
-            _uow.Commit();
+            await _uow.CommitAsync();
 
             var updatedProductDto = _mapper.Map<UpdateProductResponseDto>(product);
             return Ok(updatedProductDto);
@@ -127,7 +128,7 @@ namespace WebAPI.Controllers
 
 
         [HttpPut("{id:int}")]
-        public ActionResult<ProductDTO> Update(int id, ProductDTO productDto)
+        public async Task<ActionResult<ProductDTO>> Update(int id, ProductDTO productDto)
         {
             if (productDto == null || id != productDto.Id)
                 return BadRequest("Produto inválido ou ID não corresponde.");
@@ -135,7 +136,7 @@ namespace WebAPI.Controllers
             var product = _mapper.Map<Product>(productDto);
 
             var updatedProduct = _uow.ProductRepository.Update(product);
-            _uow.Commit();
+            await _uow.CommitAsync();
 
             var updatedProductDto = _mapper.Map<ProductDTO>(updatedProduct);
 
@@ -155,14 +156,14 @@ namespace WebAPI.Controllers
         }
 
         #region privateMethods
-        private ActionResult<IEnumerable<ProductDTO>> BuildPaginatedProductsResponse(PagedList<Product> products)
+        private ActionResult<IEnumerable<ProductDTO>> BuildPaginatedProductsResponse(IPagedList<Product> products)
         {
             var metadata = new
             {
-                products.TotalCount,
+                products.TotalItemCount,
                 products.PageSize,
                 products.PageNumber,
-                products.TotalPages,
+                products.PageCount,
                 products.HasNextPage,
                 products.HasPreviousPage
             };
